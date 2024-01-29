@@ -1,3 +1,7 @@
+FOLD joints
+J_Home,2,1
+J_Service,2,1
+J_Corner_1,2,1
 FOLD descartes
 subFOLD TYPE1
 P_Pick_PCB_T1,2,1
@@ -8,7 +12,3 @@ P_Place_PCB_T2,2,1
 subfold TYPE3
 P_Pick_PCB_T3,2,1
 P_Place_PCB_T3,2,1
-FOLD joints
-J_Home,2,1
-J_Service,2,1
-J_Corner_1,2,1

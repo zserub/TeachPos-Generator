@@ -1,3 +1,46 @@
+;FOLD joints
+
+;FOLD PTP J_Home Vel=100 % PDAT_J_Home Tool[2] Base[1] ;%{PE}
+   ;FOLD Parameters ;%{h}
+      ;Params IlfProvider=kukaroboter.basistech.inlineforms.movement.old; Kuka.IsGlobalPoint=False; Kuka.PointName=J_Home; Kuka.BlendingEnabled=False; Kuka.MoveDataPtpName=PDAT_J_Home; Kuka.VelocityPtp=100; Kuka.CurrentCDSetIndex=0; Kuka.MovementParameterFieldEnabled=True; IlfCommand=PTP
+   ;ENDFOLD
+   $BWDSTART = FALSE
+   PDAT_ACT = PPDAT_J_Home
+   FDAT_ACT = FJ_Home
+   BAS(#PTP_PARAMS, 100.0)
+   SET_CD_PARAMS (0)
+   PTP XJ_Home
+;ENDFOLD
+HALT
+
+;FOLD PTP J_Service Vel=100 % PDAT_J_Service Tool[2] Base[1] ;%{PE}
+   ;FOLD Parameters ;%{h}
+      ;Params IlfProvider=kukaroboter.basistech.inlineforms.movement.old; Kuka.IsGlobalPoint=False; Kuka.PointName=J_Service; Kuka.BlendingEnabled=False; Kuka.MoveDataPtpName=PDAT_J_Service; Kuka.VelocityPtp=100; Kuka.CurrentCDSetIndex=0; Kuka.MovementParameterFieldEnabled=True; IlfCommand=PTP
+   ;ENDFOLD
+   $BWDSTART = FALSE
+   PDAT_ACT = PPDAT_J_Service
+   FDAT_ACT = FJ_Service
+   BAS(#PTP_PARAMS, 100.0)
+   SET_CD_PARAMS (0)
+   PTP XJ_Service
+;ENDFOLD
+HALT
+
+;FOLD PTP J_Corner_1 Vel=100 % PDAT_J_Corner_1 Tool[2] Base[1] ;%{PE}
+   ;FOLD Parameters ;%{h}
+      ;Params IlfProvider=kukaroboter.basistech.inlineforms.movement.old; Kuka.IsGlobalPoint=False; Kuka.PointName=J_Corner_1; Kuka.BlendingEnabled=False; Kuka.MoveDataPtpName=PDAT_J_Corner_1; Kuka.VelocityPtp=100; Kuka.CurrentCDSetIndex=0; Kuka.MovementParameterFieldEnabled=True; IlfCommand=PTP
+   ;ENDFOLD
+   $BWDSTART = FALSE
+   PDAT_ACT = PPDAT_J_Corner_1
+   FDAT_ACT = FJ_Corner_1
+   BAS(#PTP_PARAMS, 100.0)
+   SET_CD_PARAMS (0)
+   PTP XJ_Corner_1
+;ENDFOLD
+HALT
+
+;ENDFOLD
+
 ;FOLD descartes
 
 ;FOLD sub TYPE1
@@ -89,49 +132,6 @@ HALT
 HALT
 
 ;ENDFOLD sub
-
-;ENDFOLD
-
-;FOLD joints
-
-;FOLD PTP J_Home Vel=100 % PDAT_J_Home Tool[2] Base[1] ;%{PE}
-   ;FOLD Parameters ;%{h}
-      ;Params IlfProvider=kukaroboter.basistech.inlineforms.movement.old; Kuka.IsGlobalPoint=False; Kuka.PointName=J_Home; Kuka.BlendingEnabled=False; Kuka.MoveDataPtpName=PDAT_J_Home; Kuka.VelocityPtp=100; Kuka.CurrentCDSetIndex=0; Kuka.MovementParameterFieldEnabled=True; IlfCommand=PTP
-   ;ENDFOLD
-   $BWDSTART = FALSE
-   PDAT_ACT = PPDAT_J_Home
-   FDAT_ACT = FJ_Home
-   BAS(#PTP_PARAMS, 100.0)
-   SET_CD_PARAMS (0)
-   PTP XJ_Home
-;ENDFOLD
-HALT
-
-;FOLD PTP J_Service Vel=100 % PDAT_J_Service Tool[2] Base[1] ;%{PE}
-   ;FOLD Parameters ;%{h}
-      ;Params IlfProvider=kukaroboter.basistech.inlineforms.movement.old; Kuka.IsGlobalPoint=False; Kuka.PointName=J_Service; Kuka.BlendingEnabled=False; Kuka.MoveDataPtpName=PDAT_J_Service; Kuka.VelocityPtp=100; Kuka.CurrentCDSetIndex=0; Kuka.MovementParameterFieldEnabled=True; IlfCommand=PTP
-   ;ENDFOLD
-   $BWDSTART = FALSE
-   PDAT_ACT = PPDAT_J_Service
-   FDAT_ACT = FJ_Service
-   BAS(#PTP_PARAMS, 100.0)
-   SET_CD_PARAMS (0)
-   PTP XJ_Service
-;ENDFOLD
-HALT
-
-;FOLD PTP J_Corner_1 Vel=100 % PDAT_J_Corner_1 Tool[2] Base[1] ;%{PE}
-   ;FOLD Parameters ;%{h}
-      ;Params IlfProvider=kukaroboter.basistech.inlineforms.movement.old; Kuka.IsGlobalPoint=False; Kuka.PointName=J_Corner_1; Kuka.BlendingEnabled=False; Kuka.MoveDataPtpName=PDAT_J_Corner_1; Kuka.VelocityPtp=100; Kuka.CurrentCDSetIndex=0; Kuka.MovementParameterFieldEnabled=True; IlfCommand=PTP
-   ;ENDFOLD
-   $BWDSTART = FALSE
-   PDAT_ACT = PPDAT_J_Corner_1
-   FDAT_ACT = FJ_Corner_1
-   BAS(#PTP_PARAMS, 100.0)
-   SET_CD_PARAMS (0)
-   PTP XJ_Corner_1
-;ENDFOLD
-HALT
 
 ;ENDFOLD
 

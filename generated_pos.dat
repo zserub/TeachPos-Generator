@@ -1,0 +1,29 @@
+;FOLD joints
+
+DECL GLOBAL AXIS XJ_Home={A1 0.0, A2 0.0, A3 0.0, A4 0.0, A5 0.0, A6 0.0}
+DECL GLOBAL AXIS XJ_Service={A1 0.0, A2 0.0, A3 0.0, A4 0.0, A5 0.0, A6 0.0}
+DECL GLOBAL AXIS XJ_Corner_1={A1 0.0, A2 0.0, A3 0.0, A4 0.0, A5 0.0, A6 0.0}
+;ENDFOLD
+
+;FOLD descartes
+
+;FOLD sub TYPE1
+
+DECL GLOBAL POS XP_Pick_PCB_T1 = { X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}
+DECL GLOBAL POS XP_Place_PCB_T1 = { X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}
+;ENDFOLD sub
+
+;FOLD sub TYPE2
+
+DECL GLOBAL POS XP_Pick_PCB_T2 = { X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}
+DECL GLOBAL POS XP_Place_PCB_T2 = { X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}
+;ENDFOLD sub
+
+;FOLD sub TYPE3
+
+DECL GLOBAL POS XP_Pick_PCB_T3 = { X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}
+DECL GLOBAL POS XP_Place_PCB_T3 = { X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}
+;ENDFOLD sub
+
+;ENDFOLD
+
