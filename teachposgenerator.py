@@ -97,16 +97,8 @@ def recognise_type(in_name):
         sys.exit()
 
 
-def generate_XP(name, tool, base):
+def generate_end_dats(name, tool, base):
     pos_dat_code = f'''DECL PDAT PPDAT_{name} = {{APO_MODE #CDIS, APO_DIST 500, VEL 100, ACC 100, GEAR_JERK 100.0, EXAX_IGN 0}}
-DECL FDAT F{name} = {{BASE_NO {base}, TOOL_NO {tool}, IPO_FRAME #BASE, POINT2[] " "}}
-
-'''
-    return pos_dat_code
-
-
-def generate_XJ(name, tool, base):
-    pos_dat_code = f'''DECL PDAT PPDAT_{name}={{VEL 100.000, ACC 100.000, APO_DIST 500.000, APO_MODE #CDIS, GEAR_JERK 100.000, EXAX_IGN 0}}
 DECL FDAT F{name} = {{BASE_NO {base}, TOOL_NO {tool}, IPO_FRAME #BASE, POINT2[] " "}}
 
 '''
@@ -136,17 +128,20 @@ def dat_contsturct(in_dict):
                 # if folds is just a list of pos dictionaries
                 if isinstance(in_dict[folds], list):
                     for pos in folds:
-                        in_output += generate_dat(pos['name'], pos_type_dict[pos['name']])
+                        in_output += generate_dat(pos['name'],
+                                                  pos_type_dict[pos['name']])
                 else:   # if folds has subfolds
                     for subfold in in_dict[folds]:
                         # if nonsubfold has content
                         if subfold == 'nonsubfold' and in_dict[folds]['nonsubfold'] is not None:
                             for pos in in_dict[folds]['nonsubfold']:
-                                in_output += generate_dat(pos['name'], pos_type_dict[pos['name']])
+                                in_output += generate_dat(
+                                    pos['name'], pos_type_dict[pos['name']])
                         if subfold != 'nonsubfold':
                             in_output += f';FOLD sub {subfold}\n\n'
                             for pos in in_dict[folds][subfold]:
-                                in_output += generate_dat(pos['name'], pos_type_dict[pos['name']])
+                                in_output += generate_dat(
+                                    pos['name'], pos_type_dict[pos['name']])
                             in_output += ';ENDFOLD sub\n\n'
                 in_output += ';ENDFOLD\n\n'
     return in_output
@@ -179,7 +174,8 @@ def create_pos_structure(in_dict):
 
     if in_dict['nonfold'] is not None:  # if nonfold has content
         for pos in in_dict['nonfold']:
-            in_output += generate_posteach(pos['name'], pos['tool'], pos['base'])
+            in_output += generate_posteach(pos['name'],
+                                           pos['tool'], pos['base'])
 
     # if there are actual folds
     if len([key for key in in_dict.keys() if isinstance(in_dict[key], dict) and key != 'nonfold']) != 0:
@@ -206,6 +202,18 @@ def create_pos_structure(in_dict):
                             in_output += ';ENDFOLD sub\n\n'
                 in_output += ';ENDFOLD\n\n'
     return in_output
+
+
+def loop_in_dict(in_dict):
+    for key, value in in_dict.items():
+        if isinstance(value, dict):
+            for sub_key, sub_value in value.items():
+                if isinstance(sub_value, list):
+                    for item in sub_value:
+                        if isinstance(item, dict):
+                            if 'name' in item:
+                                # print(item['name'])
+                                return [item['name'], item['tool'], item['base']]
 
 
 def detect_csv_separator(in_csvdata):
@@ -267,6 +275,10 @@ for key, value in parsed_dict.items():
 
 out_dat = dat_contsturct(parsed_dict)
 
+out_dat += '\n\n;FOLD DATs\n'
+out_dat += generate_end_dats(loop_in_dict(parsed_dict)['name'], loop_in_dict(
+    parsed_dict)['tool'], loop_in_dict(parsed_dict)['base'])
+out_dat += '\n;ENDFOLD'
 
 filename2 = 'generated_pos.dat'
 with open(filename2, 'w') as file:
