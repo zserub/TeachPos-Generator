@@ -47,6 +47,8 @@ def parse_csv(in_data):
             number += 1
             parts = line.split(separator)
             name = parts[0]
+            if name.startswith('X'):
+                name = name[1:]
             try:
                 values = list(map(int, parts[1:]))
             except ValueError:
@@ -106,12 +108,12 @@ def recognise_type(in_name):
 
 def generate_end_dats(name, tool, base, number, type):
     if type == 'P':
-        pos_dat_code = f'''DECL PDAT PPDAT{number}={{VEL 100.000,ACC 100.000,APO_DIST 500.000,APO_MODE #CDIS,GEAR_JERK 100.000,EXAX_IGN 0}}
+        pos_dat_code = f'''DECL LDAT LCPDAT{number}={{VEL 2.00000,ACC 100.000,APO_DIST 500.000,APO_FAC 50.0000,AXIS_VEL 100.000,AXIS_ACC 100.000,ORI_TYP #VAR,CIRC_TYP #BASE,JERK_FAC 50.0000,GEAR_JERK 100.000,EXAX_IGN 0,CB {{AUX_PT {{ORI #CONSIDER,E1 #CONSIDER,E2 #CONSIDER,E3 #CONSIDER,E4 #CONSIDER,E5 #CONSIDER,E6 #CONSIDER}},TARGET_PT {{ORI #INTERPOLATE,E1 #INTERPOLATE,E2 #INTERPOLATE,E3 #INTERPOLATE,E4 #INTERPOLATE,E5 #INTERPOLATE,E6 #INTERPOLATE}}}}}}
 DECL FDAT F{name}={{TOOL_NO {tool},BASE_NO {base},IPO_FRAME #BASE,POINT2[] " "}}
 
 '''
     if type == 'J':
-        pos_dat_code = f'''DECL LDAT LCPDAT{number}={{VEL 2.00000,ACC 100.000,APO_DIST 500.000,APO_FAC 50.0000,AXIS_VEL 100.000,AXIS_ACC 100.000,ORI_TYP #VAR,CIRC_TYP #BASE,JERK_FAC 50.0000,GEAR_JERK 100.000,EXAX_IGN 0,CB {{AUX_PT {{ORI #CONSIDER,E1 #CONSIDER,E2 #CONSIDER,E3 #CONSIDER,E4 #CONSIDER,E5 #CONSIDER,E6 #CONSIDER}},TARGET_PT {{ORI #INTERPOLATE,E1 #INTERPOLATE,E2 #INTERPOLATE,E3 #INTERPOLATE,E4 #INTERPOLATE,E5 #INTERPOLATE,E6 #INTERPOLATE}}}}}}
+        pos_dat_code = f'''DECL PDAT PPDAT{number}={{VEL 100.000,ACC 100.000,APO_DIST 500.000,APO_MODE #CDIS,GEAR_JERK 100.000,EXAX_IGN 0}}
 DECL FDAT F{name}={{TOOL_NO {tool},BASE_NO {base},IPO_FRAME #BASE,POINT2[] " "}}
         
 '''
@@ -274,7 +276,7 @@ COLUMN ORDER: Name, Tool, Base (do not include header!)
 For more information visit: https://github.com/zserub/TeachPos-Generator?tab=readme-ov-file#kuka-position-teaching-program-generator-from-csv-file
 
 ''')
-# input("Press Enter to start the script")
+input("Press Enter to start the script")
 
 # Try to open the CSV file
 try:
@@ -324,11 +326,11 @@ for pos in poslist:
                                  pos[2], pos[3], pos_type_dict[pos[0]])
 out_dat += ';ENDFOLD\nENDDAT'
 
-filename1 = 'generated_posteach.src'
+filename1 = 'TeachProgram.src'
 with open(filename1, 'w') as file:
     file.write(out_pos)
 
-filename2 = 'generated_pos.dat'
+filename2 = 'TeachProgram.dat'
 with open(filename2, 'w') as file:
     file.write(out_dat)
 
