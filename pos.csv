@@ -6,9 +6,9 @@ fold descartes
 SUBFOLD TYPE1
 P_Pick_PCB_T1,2,1
 P_Place_PCB_T1,2,1
-subfold TYPE2
+SUBFOLD TYPE2
 P_Pick_PCB_T2,2,1
 P_Place_PCB_T2,2,1
-subfold TYPE3
+SUBFOLD TYPE3
 P_Pick_PCB_T3,2,1
 P_Place_PCB_T3,2,1

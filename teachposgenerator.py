@@ -8,8 +8,8 @@ out_dat = ''
 
 
 def parse_csv(in_data):
-    nonfold = []
-    data_dictionary = {'nonfold': nonfold}
+    # nonfold = ''
+    data_dictionary = {'nonfold': []}
     fold_key = None
     sub_key = None
     number = 0
@@ -33,6 +33,9 @@ def parse_csv(in_data):
             sub_key = line[len('SUBFOLD '):]
             sub_key = sub_key.strip()
 
+            if fold_key is None:
+                print(f"Error: Subfold without fold '{sub_key}'")
+                sys.exit()
             if sub_key not in data_dictionary[fold_key]:
                 data_dictionary[fold_key][sub_key] = []
             else:
@@ -62,7 +65,7 @@ def parse_csv(in_data):
                         {'name': name, 'tool': values[0], 'base': values[1], 'number': number})
 
             else:
-                data_dictionary[nonfold].append(
+                data_dictionary['nonfold'].append(
                     {'name': name, 'tool': values[0], 'base': values[1], 'number': number})
     return data_dictionary
 
@@ -242,6 +245,12 @@ def loop_in_dict(in_dict):
                             if 'name' in item:
                                 result.append(
                                     [item['name'], item['tool'], item['base'], item['number']])
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    if 'name' in item:
+                        result.append(
+                                    [item['name'], item['tool'], item['base'], item['number']])
     return result
 
 
@@ -297,8 +306,12 @@ for key, value in parsed_dict.items():
                 for item in sub_value:
                     if isinstance(item, dict):
                         if 'name' in item:
-                            # print(item['name'])
                             recognise_type(item['name'])
+    elif isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict):
+                if 'name' in item:
+                    recognise_type(item['name'])
 
 out_pos = create_pos_structure(parsed_dict)
 out_pos += '\nEND'

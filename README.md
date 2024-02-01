@@ -16,6 +16,7 @@ Current version can handle 1 layer subfolding in the [csv file (click to see exa
 - Any separator works
 - For folding: Write `FOLD <name>` before the positions you want to put into that folder. It will fold everything till the next FOLD line. Same rules applied for subfolding but use `SUBFOLD <name>`
 - Use SUBFOLD only in a FOLD
+- You don't need to use folds, but if you do, each position must be in a folder.
 
 You are allowed to
 - add positions with or without folds and subfold
