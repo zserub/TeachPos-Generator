@@ -1,14 +1,13 @@
-FOLD joints
-J_Home,2,1
-J_Service,2,1
-J_Corner_1,2,1
-fold descartes
-SUBFOLD TYPE1
-P_Pick_PCB_T1,2,1
-P_Place_PCB_T1,2,1
-SUBFOLD TYPE2
-P_Pick_PCB_T2,2,1
-P_Place_PCB_T2,2,1
-SUBFOLD TYPE3
-P_Pick_PCB_T3,2,1
-P_Place_PCB_T3,2,1
+FOLD;FOLD;Name;Tool;Base
+Joints;;J_Home;1;1
+Joints;;J_Service;1;1
+Joints;;J_Corner_1;1;1
+Joints;;J_Corner_2;1;1
+Descartes;Type1;P_Pick_PCB_T1;1;1
+Descartes;Type1;P_Place_PCB_T1;1;1
+Descartes;Type2;P_Pick_PCB_T2;1;1
+Descartes;Type2;P_Place_PCB_T2;1;1
+Descartes;Type3;P_Pick_PCB_T3;1;1
+Descartes;Type3;P_Place_PCB_T3;1;1
+Descartes;Type4;P_Pick_PCB_T4;1;1
+Descartes;Type4;P_Place_PCB_T4;1;1
