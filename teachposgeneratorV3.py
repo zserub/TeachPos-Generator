@@ -48,7 +48,7 @@ class FoldHierarchy:
         if self._find_fold(self.root_fold, fold_name):
             print(f"Fold '{fold_name}' already exists.")
             return
-    
+
         new_fold = Fold(fold_name)
         if parent_fold_name:
             parent_fold = self._find_fold(self.root_fold, parent_fold_name)
@@ -91,49 +91,48 @@ def process_csv(in_data, in_fold_count):
     number = 0
 
     for row in in_data[1:]:
-        # get position data
-        name=row[header_map['name']].strip()
-        tool=int(row[header_map['tool']].strip())
-        base=int(row[header_map['base']].strip())
+        name = row[header_map['name']].strip()
+        tool = int(row[header_map['tool']].strip())
+        base = int(row[header_map['base']].strip())
         number += 1
-        
+
         position = Position(name, tool, base, number)
-        
-        # organise folds
-        if in_fold_count == 0:   # No folds
+
+        fold_names = [
+            row[header_map[f'fold{i+1}']].strip() for i in range(in_fold_count)]
+
+        if in_fold_count == 0:
             fold_hierarchy.add_position_to_fold("root", position)
-        else:   # building fold hierarchy
-            fold_names=[]
-            for i in range(in_fold_count):
-                fold_names.append(row[header_map[f'fold{i+1}']].strip())     # create a list of fold names
-            if fold_names[0] == '':   # Check if first fold name is empty
-                    raise Exception('Error: Invalid csv structure; No fold name in first column.')
-                
-            foldindex = 0    
-            for current_fold in fold_names:
-                foldindex += 1
-                if current_fold != '':  
-                    if foldindex == 1:
-                        fold_hierarchy.add_fold(current_fold)   # save fold in hierarchy if not empty
+        else:
+            if not fold_names[0]:
+                raise Exception(
+                    'Error: Invalid csv structure; No fold name in first column.')
+
+            foldname = ''
+            for i, current_fold in enumerate(fold_names):
+                if current_fold:
+                    if i == 0:
+                        fold_hierarchy.add_fold(current_fold)
                     else:
-                        fold_hierarchy.add_fold(current_fold, fold_names[foldindex-2])   # save subfold under fold
-                    fold_hierarchy.add_position_to_fold(current_fold, position)
+                        fold_hierarchy.add_fold(current_fold, fold_names[i-1])
+                    foldname = current_fold
                 else:
                     for prev_fold_name in reversed(fold_names[:i]):
-                        if prev_fold_name != '':    # Find the non-empty parent fold
-                            fold_hierarchy.add_position_to_fold(prev_fold_name, position)
+                        if prev_fold_name:
+                            # fold_hierarchy.add_position_to_fold(prev_fold_name, position)
+                            foldname = prev_fold_name
                             break
-                    
 
-        # fold_name = row[header_map['fold']].strip()
-        
-        
+            fold_hierarchy.add_position_to_fold(foldname, position)
+
+
 # Check the header to define the structure of fold hierarchy
 def process_header(headers):
     # Check if csv structure is correct
     for item in headers:
         if not re.match(r'(fold|name|tool|base)', item, re.IGNORECASE):
-            raise Exception(f'Error: Invalid csv structure; unknown column: {item}')
+            raise Exception(
+                f'Error: Invalid csv structure; unknown column: {item}')
     if 'name' not in (item.lower() for item in headers):
         raise Exception('Error: Invalid csv structure; missing "name" column.')
     if 'tool' not in [item.lower() for item in headers]:
@@ -156,6 +155,7 @@ def process_header(headers):
             else:
                 header_map[header.strip().lower()] = index
     return count_fold
+
 
 def recognise_type(in_name):
 
