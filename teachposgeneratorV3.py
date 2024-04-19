@@ -46,7 +46,7 @@ class FoldHierarchy:
     def add_fold(self, fold_name, parent_fold_name=None):
         # Check if the fold name already exists
         if self._find_fold(self.root_fold, fold_name):
-            print(f"Fold '{fold_name}' already exists.")
+            # print(f"Fold '{fold_name}' already exists.")
             return
 
         new_fold = Fold(fold_name)
@@ -77,14 +77,6 @@ class FoldHierarchy:
 
     def __str__(self):
         return str(self.root_fold)
-
-# class Duplication(Exception):
-#     def __init__(self, message):
-#         self.message = message
-#         super().__init__(self.message)
-
-#     def __str__(self):
-#         return f"Error: {self.message}"
 
 
 def process_csv(in_data, in_fold_count):
@@ -278,39 +270,26 @@ HALT
     return pos_teach_code
 
 
-def create_pos_structure(in_dict):
-    in_output = 'DEF TeachProgram ( )\n\n'
+def create_pos_structure(fold, indent=0):
+    # output_string = 'DEF TeachProgram ( )\n\n'
+    report = ""
 
-    if in_dict['nonfold'] is not None:  # if nonfold has content
-        for pos in in_dict['nonfold']:
-            in_output += generate_posteach(pos['name'],
-                                           pos['tool'], pos['base'], pos['number'], pos_type_dict[pos['name']])
+    # Print the current fold
+    report += " " * indent + f"Fold: {fold.name}\n"
 
-    # if there are actual folds
-    if len([key for key in in_dict.keys() if isinstance(in_dict[key], dict) and key != 'nonfold']) != 0:
-        for folds in in_dict:
-            if folds != 'nonfold':  # go through folds
-                in_output += f';FOLD {folds}\n\n'
-                # if folds is just a list of pos dictionaries
-                if isinstance(in_dict[folds], list):
-                    for pos in folds:
-                        in_output += generate_posteach(
-                            pos['name'], pos['tool'], pos['base'], pos['number'], pos_type_dict[pos['name']])
-                else:   # if folds has subfolds
-                    for subfold in in_dict[folds]:
-                        # if nonsubfold has content
-                        if subfold == 'nonsubfold' and in_dict[folds]['nonsubfold'] is not None:
-                            for pos in in_dict[folds]['nonsubfold']:
-                                in_output += generate_posteach(
-                                    pos['name'], pos['tool'], pos['base'], pos['number'], pos_type_dict[pos['name']])
-                        if subfold != 'nonsubfold':
-                            in_output += f';FOLD sub {subfold}\n\n'
-                            for pos in in_dict[folds][subfold]:
-                                in_output += generate_posteach(
-                                    pos['name'], pos['tool'], pos['base'], pos['number'], pos_type_dict[pos['name']])
-                            in_output += ';ENDFOLD sub\n\n'
-                in_output += ';ENDFOLD\n\n'
-    return in_output
+    # Print the positions in the current fold
+    for position in fold.positions:
+        report += " " * \
+            (indent + 2) + \
+            f"- {position.name} (Tool: {position.tool}, Base: {position.base}, Number: {position.number})\n"
+
+    for subfold in fold.subfolds.values():
+        report += create_pos_structure(subfold, indent + 2)
+    # for fold in folds:
+    #     output_string += fold + '\n'
+    #     for subfold in folds[fold].subfolds:
+    #         output_string += '\t' + subfold + '\n'
+    return report
 
 
 def loop_in_dict(in_dict):
@@ -386,23 +365,25 @@ except Exception as errormessage:
     print(errormessage)
     sys.exit()
 
-pos_type_dict = {}
-for key, value in parsed_dict.items():
-    if isinstance(value, dict):
-        for sub_key, sub_value in value.items():
-            if isinstance(sub_value, list):
-                for item in sub_value:
-                    if isinstance(item, dict):
-                        if 'name' in item:
-                            recognise_type(item['name'])
-    elif isinstance(value, list):
-        for item in value:
-            if isinstance(item, dict):
-                if 'name' in item:
-                    recognise_type(item['name'])
 
-out_pos = create_pos_structure(parsed_dict)
+# for key, value in parsed_dict.items():
+#     if isinstance(value, dict):
+#         for sub_key, sub_value in value.items():
+#             if isinstance(sub_value, list):
+#                 for item in sub_value:
+#                     if isinstance(item, dict):
+#                         if 'name' in item:
+#                             recognise_type(item['name'])
+#     elif isinstance(value, list):
+#         for item in value:
+#             if isinstance(item, dict):
+#                 if 'name' in item:
+#                     recognise_type(item['name'])
+
+out_pos = create_pos_structure(fold_hierarchy.root_fold)
 out_pos += '\nEND'
+print(out_pos)
+
 out_dat = dat_contsturct(parsed_dict)
 
 out_dat += '\n\n;FOLD DATs\n'
