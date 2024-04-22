@@ -150,7 +150,7 @@ def process_header(headers):
 
 
 def recognise_type(in_name):
-    out_type=''
+    out_type = ''
 
     if in_name.startswith("X") or in_name.startswith("x"):
         in_name = in_name[1:]
@@ -169,65 +169,64 @@ def recognise_type(in_name):
         # Default action for other cases
         print("ERROR Unknown prefix in name:", in_name)
         sys.exit()
-        
+
     return out_type
 
 
-def generate_end_dats(name, tool, base, number, type):
-    if type == 'P':
-        pos_dat_code = f'''DECL LDAT LCPDAT{number}={{VEL 2.00000,ACC 100.000,APO_DIST 500.000,APO_FAC 50.0000,AXIS_VEL 100.000,AXIS_ACC 100.000,ORI_TYP #VAR,CIRC_TYP #BASE,JERK_FAC 50.0000,GEAR_JERK 100.000,EXAX_IGN 0,CB {{AUX_PT {{ORI #CONSIDER,E1 #CONSIDER,E2 #CONSIDER,E3 #CONSIDER,E4 #CONSIDER,E5 #CONSIDER,E6 #CONSIDER}},TARGET_PT {{ORI #INTERPOLATE,E1 #INTERPOLATE,E2 #INTERPOLATE,E3 #INTERPOLATE,E4 #INTERPOLATE,E5 #INTERPOLATE,E6 #INTERPOLATE}}}}}}
+def generate_end_dats(fold):
+    
+    pos_dat_code = ''
+    
+    for position in fold.positions:
+        number = position.number
+        name = position.name
+        tool = position.tool
+        base = position.base
+        type = recognise_type(name)
+    
+        if type == 'P':
+            pos_dat_code += f'''DECL LDAT LCPDAT{number}={{VEL 2.00000,ACC 100.000,APO_DIST 500.000,APO_FAC 50.0000,AXIS_VEL 100.000,AXIS_ACC 100.000,ORI_TYP #VAR,CIRC_TYP #BASE,JERK_FAC 50.0000,GEAR_JERK 100.000,EXAX_IGN 0,CB {{AUX_PT {{ORI #CONSIDER,E1 #CONSIDER,E2 #CONSIDER,E3 #CONSIDER,E4 #CONSIDER,E5 #CONSIDER,E6 #CONSIDER}},TARGET_PT {{ORI #INTERPOLATE,E1 #INTERPOLATE,E2 #INTERPOLATE,E3 #INTERPOLATE,E4 #INTERPOLATE,E5 #INTERPOLATE,E6 #INTERPOLATE}}}}}}
 DECL FDAT F{name}={{TOOL_NO {tool},BASE_NO {base},IPO_FRAME #BASE,POINT2[] " "}}
 
 '''
-    if type == 'J':
-        pos_dat_code = f'''DECL PDAT PPDAT{number}={{VEL 100.000,ACC 100.000,APO_DIST 500.000,APO_MODE #CDIS,GEAR_JERK 100.000,EXAX_IGN 0}}
+        if type == 'J':
+            pos_dat_code += f'''DECL PDAT PPDAT{number}={{VEL 100.000,ACC 100.000,APO_DIST 500.000,APO_MODE #CDIS,GEAR_JERK 100.000,EXAX_IGN 0}}
 DECL FDAT F{name}={{TOOL_NO {tool},BASE_NO {base},IPO_FRAME #BASE,POINT2[] " "}}
-        
+
 '''
+
+    # Recursively print the subfolds
+    for subfold in fold.subfolds.values():
+        pos_dat_code += generate_end_dats(subfold)
+        
     return pos_dat_code
 
 
-def generate_dat(name, type):
-    if type == 'P':
-        in_dat = f'DECL GLOBAL POS X{name} = {{ X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}}\n'
-    if type == 'J':
-        in_dat = f'DECL GLOBAL AXIS X{name}={{A1 0.0, A2 0.0, A3 0.0, A4 0.0, A5 0.0, A6 0.0}}\n'
-    return in_dat
+def generate_dat(fold):
+    out_dat = ''
 
+    # Print the current fold
+    if fold.name != 'root':
+        out_dat += f';FOLD {fold.name}\n'
 
-def dat_contsturct(in_dict):
-    in_output = 'DEFDAT TEACHPROGRAM PUBLIC\n\n'
+    for position in fold.positions:
+        name = position.name
+        type = recognise_type(name)
 
-    if in_dict['nonfold'] is not None:  # if nonfold has content
-        for pos in in_dict['nonfold']:
-            in_output += generate_dat(pos['name'], pos_type_dict[pos['name']])
+        if type == 'P':
+            out_dat += f'DECL GLOBAL POS X{name} = {{ X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}}\n'
+        if type == 'J':
+            out_dat += f'DECL GLOBAL AXIS X{name}={{A1 0.0, A2 0.0, A3 0.0, A4 0.0, A5 0.0, A6 0.0}}\n'
+            
+    # Recursively print the subfolds
+    for subfold in fold.subfolds.values():
+        out_dat += generate_dat(subfold)
 
-    # if there are actual folds
-    if len([key for key in in_dict.keys() if isinstance(in_dict[key], dict) and key != 'nonfold']) != 0:
-        for folds in in_dict:
-            if folds != 'nonfold':  # go through folds
-                in_output += f';FOLD {folds}\n\n'
-                # if folds is just a list of pos dictionaries
-                if isinstance(in_dict[folds], list):
-                    for pos in folds:
-                        in_output += generate_dat(pos['name'],
-                                                  pos_type_dict[pos['name']])
-                else:   # if folds has subfolds
-                    for subfold in in_dict[folds]:
-                        # if nonsubfold has content
-                        if subfold == 'nonsubfold' and in_dict[folds]['nonsubfold'] is not None:
-                            for pos in in_dict[folds]['nonsubfold']:
-                                in_output += generate_dat(
-                                    pos['name'], pos_type_dict[pos['name']])
-                        if subfold != 'nonsubfold':
-                            in_output += f';FOLD sub {subfold}\n\n'
-                            for pos in in_dict[folds][subfold]:
-                                in_output += generate_dat(
-                                    pos['name'], pos_type_dict[pos['name']])
-                            in_output += ';ENDFOLD sub\n\n'
-                in_output += ';ENDFOLD\n\n'
-    return in_output
+    # Add the ENDFOLD string
+    if fold.name != 'root':
+        out_dat += f';ENDFOLD {fold.name}\n'
 
+    return out_dat
 
 def generate_posteach(name, tool, base, number, pos_type):
 
@@ -267,7 +266,6 @@ HALT
 
     return pos_teach_code
 
-
 def create_pos_structure(fold):
     output_string = ''
 
@@ -276,38 +274,18 @@ def create_pos_structure(fold):
         output_string += f';FOLD {fold.name}\n'
 
     for position in fold.positions:
-        output_string += generate_posteach(position.name, position.tool, position.base, position.number, recognise_type(position.name))
+        output_string += generate_posteach(position.name, position.tool,
+                                           position.base, position.number, recognise_type(position.name))
 
     # Recursively print the subfolds
     for subfold in fold.subfolds.values():
         output_string += create_pos_structure(subfold)
-        
+
     # Add the ENDFOLD string
     if fold.name != 'root':
         output_string += f';ENDFOLD {fold.name}\n'
-        
+
     return output_string
-
-
-def loop_in_dict(in_dict):
-    result = []
-    for key, value in in_dict.items():
-        if isinstance(value, dict):
-            for sub_key, sub_value in value.items():
-                if isinstance(sub_value, list):
-                    for item in sub_value:
-                        if isinstance(item, dict):
-                            if 'name' in item:
-                                result.append(
-                                    [item['name'], item['tool'], item['base'], item['number']])
-        elif isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict):
-                    if 'name' in item:
-                        result.append(
-                            [item['name'], item['tool'], item['base'], item['number']])
-    return result
-
 
 def detect_csv_separator(in_csvdata):
     sniffer = csv.Sniffer()
@@ -362,18 +340,17 @@ except Exception as errormessage:
     print(errormessage)
     sys.exit()
 
+# SRC generator
 out_pos = 'DEF TeachProgram ( )\n\n'
 out_pos = create_pos_structure(fold_hierarchy.root_fold)
 out_pos += '\nEND'
-print(out_pos)
+# print(out_pos)
 
-out_dat = dat_contsturct(parsed_dict)
-
+# DAT generator
+out_dat = 'DEFDAT TEACHPROGRAM PUBLIC\n\n'
+out_dat = generate_dat(fold_hierarchy.root_fold)
 out_dat += '\n\n;FOLD DATs\n'
-poslist = loop_in_dict(parsed_dict)
-for pos in poslist:
-    out_dat += generate_end_dats(pos[0], pos[1],
-                                 pos[2], pos[3], pos_type_dict[pos[0]])
+out_dat += generate_end_dats(fold_hierarchy.root_fold)
 out_dat += ';ENDFOLD\nENDDAT'
 
 filename1 = 'TeachProgram.src'
