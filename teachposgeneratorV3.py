@@ -150,29 +150,27 @@ def process_header(headers):
 
 
 def recognise_type(in_name):
+    out_type=''
 
-    if in_name[:1] == "X":
+    if in_name.startswith("X") or in_name.startswith("x"):
         in_name = in_name[1:]
 
-    if in_name in pos_type_dict:
-        print(f"Error: Duplicate POS name '{in_name}'")
-        sys.exit()
     if len(in_name) > 22:
         print("Error: Name is too long:", in_name)
         sys.exit()
 
-    if in_name[:1] == "P":
-        # print("Processing XP:", input_string[2:])
-        pos_type_dict[in_name] = 'P'
+    if in_name.startswith("P") or in_name.startswith("p"):
+        out_type = 'P'
 
-    elif in_name[:1] == "J":
-        # print("Processing XJ:", input_string[2:])
-        pos_type_dict[in_name] = 'J'
+    elif in_name.startswith("J") or in_name.startswith("j"):
+        out_type = 'J'
 
     else:
         # Default action for other cases
         print("ERROR Unknown prefix in name:", in_name)
         sys.exit()
+        
+    return out_type
 
 
 def generate_end_dats(name, tool, base, number, type):
@@ -270,26 +268,25 @@ HALT
     return pos_teach_code
 
 
-def create_pos_structure(fold, indent=0):
-    # output_string = 'DEF TeachProgram ( )\n\n'
-    report = ""
+def create_pos_structure(fold):
+    output_string = ''
 
     # Print the current fold
-    report += " " * indent + f"Fold: {fold.name}\n"
+    if fold.name != 'root':
+        output_string += f';FOLD {fold.name}\n'
 
-    # Print the positions in the current fold
     for position in fold.positions:
-        report += " " * \
-            (indent + 2) + \
-            f"- {position.name} (Tool: {position.tool}, Base: {position.base}, Number: {position.number})\n"
+        output_string += generate_posteach(position.name, position.tool, position.base, position.number, recognise_type(position.name))
 
+    # Recursively print the subfolds
     for subfold in fold.subfolds.values():
-        report += create_pos_structure(subfold, indent + 2)
-    # for fold in folds:
-    #     output_string += fold + '\n'
-    #     for subfold in folds[fold].subfolds:
-    #         output_string += '\t' + subfold + '\n'
-    return report
+        output_string += create_pos_structure(subfold)
+        
+    # Add the ENDFOLD string
+    if fold.name != 'root':
+        output_string += f';ENDFOLD {fold.name}\n'
+        
+    return output_string
 
 
 def loop_in_dict(in_dict):
@@ -365,21 +362,7 @@ except Exception as errormessage:
     print(errormessage)
     sys.exit()
 
-
-# for key, value in parsed_dict.items():
-#     if isinstance(value, dict):
-#         for sub_key, sub_value in value.items():
-#             if isinstance(sub_value, list):
-#                 for item in sub_value:
-#                     if isinstance(item, dict):
-#                         if 'name' in item:
-#                             recognise_type(item['name'])
-#     elif isinstance(value, list):
-#         for item in value:
-#             if isinstance(item, dict):
-#                 if 'name' in item:
-#                     recognise_type(item['name'])
-
+out_pos = 'DEF TeachProgram ( )\n\n'
 out_pos = create_pos_structure(fold_hierarchy.root_fold)
 out_pos += '\nEND'
 print(out_pos)
