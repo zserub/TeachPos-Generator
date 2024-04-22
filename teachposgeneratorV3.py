@@ -299,12 +299,12 @@ def detect_csv_separator(in_csvdata):
 print('''*********************************
 | Welcome to TeachPos Generator |
 *********************************
-from your excel, copy-paste your positions in a text file and save it as pos.csv in the same fold as this script
-COLUMN ORDER: Name, Tool, Base (do not include header!)
+Create your pos.csv in the same folder as this script
+
 For more information visit: https://github.com/zserub/TeachPos-Generator?tab=readme-ov-file#kuka-position-teaching-program-generator-from-csv-file
 
 ''')
-# input("Press Enter to start the script")
+input("Press Enter to start the generation...")
 
 # Read CSV file
 data = []
@@ -353,6 +353,7 @@ out_dat += '\n\n;FOLD DATs\n'
 out_dat += generate_end_dats(fold_hierarchy.root_fold)
 out_dat += ';ENDFOLD\nENDDAT'
 
+# Write files
 filename1 = 'TeachProgram.src'
 with open(filename1, 'w') as file:
     file.write(out_pos)
@@ -360,6 +361,5 @@ with open(filename1, 'w') as file:
 filename2 = 'TeachProgram.dat'
 with open(filename2, 'w') as file:
     file.write(out_dat)
-
 
 print(f'The code has been written to {filename1} and {filename2}')
