@@ -11,19 +11,19 @@ A simple tool to generate the positions [.src](https://github.com/zserub/TeachPo
 
 ## USAGE
 
-In an empty excel copy your position data, include a header to explain which column represents which data, then save it as .csv file.
+Download the latest release and extract in a folder.
+
+In an empty excel, copy your position data, then save it as .csv file. *(See the rules below)*
 
 ![saving](pics/saving.png)
 
-*[See example](https://github.com/zserub/TeachPos-Generator/blob/main/test.xlsx)*
-
-Create your `pos.csv` file in the same folder as the script. *(See the rules below)*
+Save your `pos.csv` file in the **same folder** as the script!
 
 Start the script with `START_script.bat`
 
-If you don't have python it will warn you and offer a download link, remind you to add it to your PATH and try again.
+*If you don't have python it will warn you and offer a download link, remind you to add it to your PATH and try again.*
 
-If python is installed run the `START_script.bat` again.
+*After python is installed run the `START_script.bat` again.*
 
 Enter a start number. The generator will start counting from that number.
 
