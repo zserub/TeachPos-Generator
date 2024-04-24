@@ -17,7 +17,6 @@ class Position:
     def __str__(self):
         return f"Position: {self.name} - Tool: {self.tool} - Base: {self.base} - Number: {self.number}"
 
-
 class Fold:
     def __init__(self, name):
         self.name = name
@@ -37,7 +36,6 @@ class Fold:
         for subfold in self.subfolds.values():
             fold_str += str(subfold) + "\n"
         return fold_str
-
 
 class FoldHierarchy:
     def __init__(self):
@@ -78,12 +76,46 @@ class FoldHierarchy:
     def __str__(self):
         return str(self.root_fold)
 
+def unX(name):
+    if name.startswith("X") or name.startswith("x"):  # if name starts with X, delete it
+        name = name[1:]
+    return name
+
+# Check the header to define the structure of fold hierarchy
+def process_header(headers):
+    # Check if csv structure is correct
+    for item in headers:
+        if not re.match(r'(fold|name|tool|base)', item, re.IGNORECASE):
+            raise Exception(
+                f'Error: Invalid csv structure; unknown column: {item}')
+    if 'name' not in (item.lower() for item in headers):
+        raise Exception('Error: Invalid csv structure; missing "name" column.')
+    if 'tool' not in [item.lower() for item in headers]:
+        raise Exception('Error: Invalid csv structure; missing "tool" column.')
+    if 'base' not in [item.lower() for item in headers]:
+        raise Exception('Error: Invalid csv structure; missing "base" column.')
+
+    # Count the number of folds
+    count_fold = sum(1 for column in headers
+                     if re.match('FOLD', column, re.IGNORECASE))
+    print(f"Number of folds: {count_fold}")
+
+    numbering = 1
+    for index, header in enumerate(headers):
+        if count_fold > 0:
+            if re.match('FOLD', header, re.IGNORECASE):
+                key = 'fold' + str(numbering)
+                header_map[key] = index
+                numbering += 1
+            else:
+                header_map[header.strip().lower()] = index
+    return count_fold
 
 def process_csv(in_data, in_fold_count):
     number = 0
 
     for row in in_data[1:]:
-        name = row[header_map['name']].strip()
+        name = unX(row[header_map['name']].strip())
         tool = int(row[header_map['tool']].strip())
         base = int(row[header_map['base']].strip())
         number += 1
@@ -117,43 +149,8 @@ def process_csv(in_data, in_fold_count):
 
             fold_hierarchy.add_position_to_fold(foldname, position)
 
-
-# Check the header to define the structure of fold hierarchy
-def process_header(headers):
-    # Check if csv structure is correct
-    for item in headers:
-        if not re.match(r'(fold|name|tool|base)', item, re.IGNORECASE):
-            raise Exception(
-                f'Error: Invalid csv structure; unknown column: {item}')
-    if 'name' not in (item.lower() for item in headers):
-        raise Exception('Error: Invalid csv structure; missing "name" column.')
-    if 'tool' not in [item.lower() for item in headers]:
-        raise Exception('Error: Invalid csv structure; missing "tool" column.')
-    if 'base' not in [item.lower() for item in headers]:
-        raise Exception('Error: Invalid csv structure; missing "base" column.')
-
-    # Count the number of folds
-    count_fold = sum(1 for column in headers
-                     if re.match('FOLD', column, re.IGNORECASE))
-    print(f"Number of folds: {count_fold}")
-
-    numbering = 1
-    for index, header in enumerate(headers):
-        if count_fold > 0:
-            if re.match('FOLD', header, re.IGNORECASE):
-                key = 'fold' + str(numbering)
-                header_map[key] = index
-                numbering += 1
-            else:
-                header_map[header.strip().lower()] = index
-    return count_fold
-
-
 def recognise_type(in_name):
     out_type = ''
-
-    if in_name.startswith("X") or in_name.startswith("x"):
-        in_name = in_name[1:]
 
     if len(in_name) > 22:
         print("Error: Name is too long:", in_name)
@@ -172,6 +169,31 @@ def recognise_type(in_name):
 
     return out_type
 
+def generate_dat(fold):
+    out_dat = ''
+
+    # Print the current fold
+    if fold.name != 'root':
+        out_dat += f';FOLD {fold.name}\n'
+
+    for position in fold.positions:
+        name = position.name
+        type = recognise_type(name)
+
+        if type == 'P':
+            out_dat += f'DECL GLOBAL POS X{name} = {{ X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}}\n'
+        if type == 'J':
+            out_dat += f'DECL GLOBAL AXIS X{name}={{A1 0.0, A2 0.0, A3 0.0, A4 0.0, A5 0.0, A6 0.0}}\n'
+            
+    # Recursively print the subfolds
+    for subfold in fold.subfolds.values():
+        out_dat += generate_dat(subfold)
+
+    # Add the ENDFOLD string
+    if fold.name != 'root':
+        out_dat += f';ENDFOLD {fold.name}\n'
+
+    return out_dat
 
 def generate_end_dats(fold):
     
@@ -201,37 +223,7 @@ DECL FDAT F{name}={{TOOL_NO {tool},BASE_NO {base},IPO_FRAME #BASE,POINT2[] " "}}
         
     return pos_dat_code
 
-
-def generate_dat(fold):
-    out_dat = ''
-
-    # Print the current fold
-    if fold.name != 'root':
-        out_dat += f';FOLD {fold.name}\n'
-
-    for position in fold.positions:
-        name = position.name
-        type = recognise_type(name)
-
-        if type == 'P':
-            out_dat += f'DECL GLOBAL POS X{name} = {{ X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}}\n'
-        if type == 'J':
-            out_dat += f'DECL GLOBAL AXIS X{name}={{A1 0.0, A2 0.0, A3 0.0, A4 0.0, A5 0.0, A6 0.0}}\n'
-            
-    # Recursively print the subfolds
-    for subfold in fold.subfolds.values():
-        out_dat += generate_dat(subfold)
-
-    # Add the ENDFOLD string
-    if fold.name != 'root':
-        out_dat += f';ENDFOLD {fold.name}\n'
-
-    return out_dat
-
 def generate_posteach(name, tool, base, number, pos_type):
-
-    if name[:1] == "X":  # if name starts with X, delete it
-        name = name[1:]
 
     if pos_type == 'P':
         pos_teach_code = f''';FOLD LIN {name} Vel=2 m/s CPDAT{number} Tool[{tool}] Base[{base}] ;%{{PE}}

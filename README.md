@@ -1,5 +1,10 @@
 # KUKA position teaching program generator from csv file
 
+## Requirements
+
+- [Python](https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe)
+- (Excel)
+
 ## Usage
 
 Start the script with `START_script.bat`
