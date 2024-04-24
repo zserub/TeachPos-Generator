@@ -17,6 +17,7 @@ class Position:
     def __str__(self):
         return f"Position: {self.name} - Tool: {self.tool} - Base: {self.base} - Number: {self.number}"
 
+
 class Fold:
     def __init__(self, name):
         self.name = name
@@ -36,6 +37,7 @@ class Fold:
         for subfold in self.subfolds.values():
             fold_str += str(subfold) + "\n"
         return fold_str
+
 
 class FoldHierarchy:
     def __init__(self):
@@ -76,12 +78,15 @@ class FoldHierarchy:
     def __str__(self):
         return str(self.root_fold)
 
+
 def unX(name):
     if name.startswith("X") or name.startswith("x"):  # if name starts with X, delete it
         name = name[1:]
     return name
 
 # Check the header to define the structure of fold hierarchy
+
+
 def process_header(headers):
     # Check if csv structure is correct
     for item in headers:
@@ -111,8 +116,9 @@ def process_header(headers):
                 header_map[header.strip().lower()] = index
     return count_fold
 
-def process_csv(in_data, in_fold_count):
-    number = 0
+
+def process_csv(in_data, in_fold_count, start_number):
+    number = start_number-1
 
     for row in in_data[1:]:
         name = unX(row[header_map['name']].strip())
@@ -149,6 +155,7 @@ def process_csv(in_data, in_fold_count):
 
             fold_hierarchy.add_position_to_fold(foldname, position)
 
+
 def recognise_type(in_name):
     out_type = ''
 
@@ -169,6 +176,7 @@ def recognise_type(in_name):
 
     return out_type
 
+
 def generate_dat(fold):
     out_dat = ''
 
@@ -184,7 +192,7 @@ def generate_dat(fold):
             out_dat += f'DECL GLOBAL POS X{name} = {{ X 0.0, Y 0.0, Z 0.0, A 0.0, B 0.0, C 0.0, S 0, T 0}}\n'
         if type == 'J':
             out_dat += f'DECL GLOBAL AXIS X{name}={{A1 0.0, A2 0.0, A3 0.0, A4 0.0, A5 0.0, A6 0.0}}\n'
-            
+
     # Recursively print the subfolds
     for subfold in fold.subfolds.values():
         out_dat += generate_dat(subfold)
@@ -195,17 +203,18 @@ def generate_dat(fold):
 
     return out_dat
 
+
 def generate_end_dats(fold):
-    
+
     pos_dat_code = ''
-    
+
     for position in fold.positions:
         number = position.number
         name = position.name
         tool = position.tool
         base = position.base
         type = recognise_type(name)
-    
+
         if type == 'P':
             pos_dat_code += f'''DECL LDAT LCPDAT{number}={{VEL 2.00000,ACC 100.000,APO_DIST 500.000,APO_FAC 50.0000,AXIS_VEL 100.000,AXIS_ACC 100.000,ORI_TYP #VAR,CIRC_TYP #BASE,JERK_FAC 50.0000,GEAR_JERK 100.000,EXAX_IGN 0,CB {{AUX_PT {{ORI #CONSIDER,E1 #CONSIDER,E2 #CONSIDER,E3 #CONSIDER,E4 #CONSIDER,E5 #CONSIDER,E6 #CONSIDER}},TARGET_PT {{ORI #INTERPOLATE,E1 #INTERPOLATE,E2 #INTERPOLATE,E3 #INTERPOLATE,E4 #INTERPOLATE,E5 #INTERPOLATE,E6 #INTERPOLATE}}}}}}
 DECL FDAT F{name}={{TOOL_NO {tool},BASE_NO {base},IPO_FRAME #BASE,POINT2[] " "}}
@@ -220,8 +229,9 @@ DECL FDAT F{name}={{TOOL_NO {tool},BASE_NO {base},IPO_FRAME #BASE,POINT2[] " "}}
     # Recursively print the subfolds
     for subfold in fold.subfolds.values():
         pos_dat_code += generate_end_dats(subfold)
-        
+
     return pos_dat_code
+
 
 def generate_posteach(name, tool, base, number, pos_type):
 
@@ -258,6 +268,7 @@ HALT
 
     return pos_teach_code
 
+
 def create_pos_structure(fold):
     output_string = ''
 
@@ -279,6 +290,7 @@ def create_pos_structure(fold):
 
     return output_string
 
+
 def detect_csv_separator(in_csvdata):
     sniffer = csv.Sniffer()
     dialect = sniffer.sniff(in_csvdata)
@@ -296,7 +308,15 @@ Create your pos.csv in the same folder as this script
 For more information visit: https://github.com/zserub/TeachPos-Generator?tab=readme-ov-file#kuka-position-teaching-program-generator-from-csv-file
 
 ''')
-input("Press Enter to start the generation...")
+correct_number = True
+while correct_number:
+    start_number = int(input(
+        "Type in the first number and press enter to start the generation...\nStart number: "))
+
+    if start_number <= 0:
+        print("\nERROR: Start number must be greater than 0!")
+    else:
+        correct_number = False
 
 # Read CSV file
 data = []
@@ -327,7 +347,7 @@ header_map = {}
 fold_hierarchy = FoldHierarchy()
 try:
     fold_count = process_header(data[0])
-    process_csv(data, fold_count)
+    process_csv(data, fold_count, start_number)
 except Exception as errormessage:
     print(errormessage)
     sys.exit()
