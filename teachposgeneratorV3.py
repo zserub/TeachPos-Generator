@@ -3,8 +3,6 @@ import csv
 import re
 
 csv_file_path = './pos.csv'
-out_pos = ''
-out_dat = ''
 
 
 class Position:
@@ -84,52 +82,50 @@ def unX(name):
         name = name[1:]
     return name
 
-# Check the header to define the structure of fold hierarchy
 
-
-def process_header(headers):
+def parse_header(headers):
     # Check if csv structure is correct
-    for item in headers:
-        if not re.match(r'(fold|name|tool|base)', item, re.IGNORECASE):
-            raise Exception(
-                f'Error: Invalid csv structure; unknown column: {item}')
-    if 'name' not in (item.lower() for item in headers):
-        raise Exception('Error: Invalid csv structure; missing "name" column.')
-    if 'tool' not in [item.lower() for item in headers]:
-        raise Exception('Error: Invalid csv structure; missing "tool" column.')
-    if 'base' not in [item.lower() for item in headers]:
-        raise Exception('Error: Invalid csv structure; missing "base" column.')
+    expected_headers = {'name', 'tool', 'base'}
+    missing_headers = expected_headers - {h.lower() for h in headers}
+    if missing_headers:
+        raise Exception(
+            f'Error: Invalid CSV structure; missing columns: {", ".join(missing_headers)}')
 
-    # Count the number of folds
-    count_fold = sum(1 for column in headers
-                     if re.match('FOLD', column, re.IGNORECASE))
-    print(f"Number of folds: {count_fold}")
+    fold_headers = [h for h in headers if h.lower().startswith('fold')]
+    fold_count = len(fold_headers)
+    if fold_count > 0:
+        print(f"Number of folds: {fold_count}")
+    else:
+        raise Exception(
+            "Error: Invalid CSV structure; No fold column found.\nIf you don't want to create any fold, make a fold column as `root`")
 
+    header_map = {}
     numbering = 1
     for index, header in enumerate(headers):
-        if count_fold > 0:
+        if fold_count > 0:
             if re.match('FOLD', header, re.IGNORECASE):
                 key = 'fold' + str(numbering)
                 header_map[key] = index
                 numbering += 1
             else:
-                header_map[header.strip().lower()] = index
-    return count_fold
+                header_map[header.lower()] = index
+    return fold_count, header_map
 
 
-def process_csv(in_data, in_fold_count, start_number):
+def parse_data(in_data, in_fold_count, start_number, header_map):
+    fold_hierarchy = FoldHierarchy()
     number = start_number-1
 
     for row in in_data[1:]:
-        name = unX(row[header_map['name']].strip())
-        tool = int(row[header_map['tool']].strip())
-        base = int(row[header_map['base']].strip())
+        name = unX(row[header_map['name']])
+        tool = int(row[header_map['tool']])
+        base = int(row[header_map['base']])
         number += 1
 
         position = Position(name, tool, base, number)
 
         fold_names = [
-            row[header_map[f'fold{i+1}']].strip() for i in range(in_fold_count)]
+            row[header_map[f'fold{i+1}']] for i in range(in_fold_count)]
 
         if in_fold_count == 0:
             fold_hierarchy.add_position_to_fold("root", position)
@@ -155,13 +151,15 @@ def process_csv(in_data, in_fold_count, start_number):
 
             fold_hierarchy.add_position_to_fold(foldname, position)
 
+    return fold_hierarchy
+
 
 def recognise_type(in_name):
     out_type = ''
 
     if len(in_name) > 22:
         print("Error: Name is too long:", in_name)
-        sys.exit()
+        sys.exit(1)
 
     if in_name.startswith("P") or in_name.startswith("p"):
         out_type = 'P'
@@ -172,12 +170,12 @@ def recognise_type(in_name):
     else:
         # Default action for other cases
         print("ERROR Unknown prefix in name:", in_name)
-        sys.exit()
+        sys.exit(1)
 
     return out_type
 
 
-def generate_dat(fold):
+def generate_dat_code(fold):
     out_dat = ''
 
     # Print the current fold
@@ -195,7 +193,7 @@ def generate_dat(fold):
 
     # Recursively print the subfolds
     for subfold in fold.subfolds.values():
-        out_dat += generate_dat(subfold)
+        out_dat += generate_dat_code(subfold)
 
     # Add the ENDFOLD string
     if fold.name != 'root':
@@ -233,7 +231,7 @@ DECL FDAT F{name}={{TOOL_NO {tool},BASE_NO {base},IPO_FRAME #BASE,POINT2[] " "}}
     return pos_dat_code
 
 
-def generate_posteach(name, tool, base, number, pos_type):
+def generate_src_code(name, tool, base, number, pos_type):
 
     if pos_type == 'P':
         pos_teach_code = f''';FOLD LIN {name} Vel=2 m/s CPDAT{number} Tool[{tool}] Base[{base}] ;%{{PE}}
@@ -269,7 +267,28 @@ HALT
     return pos_teach_code
 
 
-def create_pos_structure(fold):
+def src_string_to_file(fold_hierarchy):
+    out_pos = 'DEF TeachProgram ( )\n\n'
+    out_pos = create_fold_struct_for_src(fold_hierarchy.root_fold)
+    out_pos += '\nEND'
+
+    # Write files
+    with open('TeachProgram.src', 'w') as file:
+        file.write(out_pos)
+
+
+def dat_string_to_file(fold_hierarchy):
+    out_dat = 'DEFDAT TEACHPROGRAM PUBLIC\n\n'
+    out_dat += generate_dat_code(fold_hierarchy.root_fold)
+    out_dat += '\n\n;FOLD DATs\n'
+    out_dat += generate_end_dats(fold_hierarchy.root_fold)
+    out_dat += ';ENDFOLD\nENDDAT'
+
+    with open('TeachProgram.dat', 'w') as file:
+        file.write(out_dat)
+
+
+def create_fold_struct_for_src(fold):
     output_string = ''
 
     # Print the current fold
@@ -277,12 +296,12 @@ def create_pos_structure(fold):
         output_string += f';FOLD {fold.name}\n'
 
     for position in fold.positions:
-        output_string += generate_posteach(position.name, position.tool,
+        output_string += generate_src_code(position.name, position.tool,
                                            position.base, position.number, recognise_type(position.name))
 
     # Recursively print the subfolds
     for subfold in fold.subfolds.values():
-        output_string += create_pos_structure(subfold)
+        output_string += create_fold_struct_for_src(subfold)
 
     # Add the ENDFOLD string
     if fold.name != 'root':
@@ -294,84 +313,78 @@ def create_pos_structure(fold):
 def detect_csv_separator(in_csvdata):
     sniffer = csv.Sniffer()
     dialect = sniffer.sniff(in_csvdata)
-    file.seek(0)  # Reset file pointer to beginning
     return dialect.delimiter
 
 
-#####################################################
-#                       MAIN                        #
-print('''*********************************
-| Welcome to TeachPos Generator |
-*********************************
-Create your pos.csv in the same folder as this script
+def read_csv(csv_file_path):
+    data = []
+    try:
+        with open(csv_file_path, mode='r') as file:
+            # Detect the CSV separator
+            separator = detect_csv_separator(file.read(1024))
+            file.seek(0)  # Reset file pointer to beginning
+            if separator:
+                print(f"The CSV separator in {csv_file_path} is: {separator}")
+            else:
+                print("Failed to detect CSV separator.")
 
-For more information visit: https://github.com/zserub/TeachPos-Generator?tab=readme-ov-file#kuka-position-teaching-program-generator-from-csv-file
+            # Create a CSV reader object with the detected delimiter
+            reader = csv.reader(file, delimiter=separator)
+            #  Iterate over each row in the CSV file
+            for row in reader:
+                # Append each row to the data list after cleaning whitespaces
+                data.append([item.strip() for item in row])
 
-''')
-correct_number = True
-while correct_number:
-    start_number = int(input(
-        "Type in the first number and press enter to start the generation...\nStart number: "))
+    except FileNotFoundError:
+        print(f"Error: The file '{csv_file_path}' was not found.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+        sys.exit(1)
 
-    if start_number <= 0:
-        print("\nERROR: Start number must be greater than 0!")
-    else:
-        correct_number = False
+    return data
 
-# Read CSV file
-data = []
-try:
-    with open(csv_file_path, mode='r') as file:
-        # Detect the CSV separator
-        separator = detect_csv_separator(file.read(1024))
-        if separator:
-            print(f"The CSV separator in {csv_file_path} is: {separator}")
-        else:
-            print("Failed to detect CSV separator.")
 
-        # Create a CSV reader object with the detected delimiter
-        reader = csv.reader(file, delimiter=separator)
-        # Iterate over each row in the CSV file
-        for row in reader:
-            # Append each row to the data list
-            data.append(row)
-except FileNotFoundError:
-    print(f"Error: The file '{csv_file_path}' was not found.")
-    sys.exit()
-except Exception as e:
-    print(f"An unexpected error occurred: {str(e)}")
-    sys.exit()
+def get_valid_start_number():
+    while True:
+        try:
+            start_number = int(input(
+                "Type in the first number and press enter to start the generation...\nStart number: "))
+            if start_number > 0:
+                return start_number
+            else:
+                print("\nERROR: Start number must be greater than 0!")
+        except ValueError:
+            print("\nERROR: Invalid input. Please enter a number.")
 
-# Process CSV data
-header_map = {}
-fold_hierarchy = FoldHierarchy()
-try:
-    fold_count = process_header(data[0])
-    process_csv(data, fold_count, start_number)
-except Exception as errormessage:
-    print(errormessage)
-    sys.exit()
 
-# SRC generator
-out_pos = 'DEF TeachProgram ( )\n\n'
-out_pos = create_pos_structure(fold_hierarchy.root_fold)
-out_pos += '\nEND'
-# print(out_pos)
+def main():
+    print('''*********************************
+    | Welcome to TeachPos Generator |
+    *********************************
+    Create your pos.csv in the same folder as this script
 
-# DAT generator
-out_dat = 'DEFDAT TEACHPROGRAM PUBLIC\n\n'
-out_dat = generate_dat(fold_hierarchy.root_fold)
-out_dat += '\n\n;FOLD DATs\n'
-out_dat += generate_end_dats(fold_hierarchy.root_fold)
-out_dat += ';ENDFOLD\nENDDAT'
+    For more information visit: https://github.com/zserub/TeachPos-Generator
 
-# Write files
-filename1 = 'TeachProgram.src'
-with open(filename1, 'w') as file:
-    file.write(out_pos)
+    ''')
 
-filename2 = 'TeachProgram.dat'
-with open(filename2, 'w') as file:
-    file.write(out_dat)
+    start_number = get_valid_start_number()
+    data = read_csv(csv_file_path)
 
-print(f'The code has been written to {filename1} and {filename2}')
+    # Process CSV data
+    try:
+        fold_count, header_map = parse_header(data[0])
+        fold_hierarchy = parse_data(
+            data, fold_count, start_number, header_map)
+    except Exception as errormessage:
+        print(errormessage)
+        sys.exit(1)
+
+    src_string_to_file(fold_hierarchy)
+    dat_string_to_file(fold_hierarchy)
+
+    print(f'The code has been written to TeachProgram.src and TeachProgram.dat.')
+
+
+if __name__ == "__main__":
+    main()
