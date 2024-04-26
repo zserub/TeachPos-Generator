@@ -11,7 +11,7 @@ A simple tool to generate the positions [.src](https://github.com/zserub/TeachPo
 
 ## USAGE
 
-[Download the latest release](https://github.com/zserub/TeachPos-Generator/releases/download/KUKA-robot/TeachPos-Generator_live_v1.zip) and extract in a folder.
+[Download the latest release](https://github.com/zserub/TeachPos-Generator/releases/download/KUKA-robot/TeachPos-Generator_live_v12.zip) and extract in a folder.
 
 In an empty excel, copy your position data, then save it as .csv file. *(See the rules below)*
 
