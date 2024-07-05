@@ -10,14 +10,14 @@ if %errorlevel% neq 0 (
 )
 
 rem Check if teachposgenerator.py exists
-if not exist teachposgenerator.py (
+if not exist teachposgeneratorV3.py (
     echo The script teachposgenerator.py is missing. Please make sure it is in the same directory as this batch file.
     pause
     exit /b 1
 )
 
 rem Python is installed, pandas is installed, and the script exists, start teachposgenerator.py
-python teachposgenerator.py
+python teachposgeneratorV3.py
 
 rem Pause to keep the command window open (optional)
 pause

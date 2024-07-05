@@ -17,6 +17,8 @@ In an empty excel, copy your position data, then save it as .csv file. *(See the
 
 ![saving](pics/saving.png)
 
+> If you get `Error: Invalid csv structure; No fold name in first column.` however your CSV is correct, try to save it in another CSV format, some coding is not supported like `UTF-8 with BOM`
+
 Save your `pos.csv` file in the **same folder** as the script!
 
 Start the script with `START_script.bat`
